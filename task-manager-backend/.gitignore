@@ -1,0 +1,15 @@
+# Dependencies (இவை தான் ரொம்ப பெரிய சைஸ் ஃபைல்கள், GitHub-க்கு தேவையில்லை)
+node_modules/
+
+# Production Build ஃபைல்கள்
+dist/
+build/
+
+# Environment Variables (ரகசிய பாஸ்வேர்டுகள்)
+.env
+.env.local
+
+# Logs மற்றும் System ஃபைல்கள்
+npm-debug.log*
+yarn-debug.log*
+.DS_Store

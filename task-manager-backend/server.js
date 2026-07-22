@@ -1,0 +1,46 @@
+const express = require('express');
+const mysql = require('mysql2');
+const cors = require('cors');
+
+const app = express();
+app.use(cors()); // Frontend-ல இருந்து வர Request-ஐ Allow பண்ண
+app.use(express.json()); // JSON Data-வை புரிஞ்சுக்க
+
+// MySQL Connection (Unga Port 3307-க்கு ஏத்த மாதிரி Set பண்ணிருக்கேன்)
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: '',      // XAMPP-ல Password இல்ல
+    database: 'marin_tasks_db',
+    port: 3307         // 👈 Unga XAMPP MySQL Port Number
+});
+
+db.connect((err) => {
+    if (err) {
+        console.log("Database Connection Failed!", err);
+    } else {
+        console.log("MySQL Database Connected Successfully!");
+    }
+});
+
+// API 1: Get All Tasks (Database-ல இருந்து Data எடுக்க)
+app.get('/api/tasks', (req, res) => {
+    db.query('SELECT * FROM tasks', (err, results) => {
+        if (err) return res.status(500).json(err);
+        return res.json(results);
+    });
+});
+
+// API 2: Add New Task (புது Task டேட்டாபேஸ்ல சேர்க்க)
+app.post('/api/tasks', (req, res) => {
+    const { title } = req.body;
+    db.query('INSERT INTO tasks (title) VALUES (?)', [title], (err, result) => {
+        if (err) return res.status(500).json(err);
+        return res.json({ id: result.insertId, title, status: 'Pending' });
+    });
+});
+
+// Server Run பண்ணுறோம்
+app.listen(5000, () => {
+    console.log("Backend Server running on http://localhost:5000");
+});
