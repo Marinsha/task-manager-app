@@ -82,74 +82,41 @@ function App() {
   };
 
   return (
-    <div style={{ padding: '30px', fontFamily: 'Arial, sans-serif' }}>
-      <h2>📌 Marin's Task Manager (React TS + MySQL)</h2>
+    <div className="app-container">
+      <h2 className="app-title">📌 Marin's Task Manager</h2>
 
       {/* Input Box and Button */}
-      <div style={{ marginBottom: '20px' }}>
+      <div className="input-group">
         <input
           type="text"
+          className="task-input"
           placeholder="Enter a new task..."
           value={newTitle}
           onChange={(e) => setNewTitle(e.target.value)}
-          style={{ padding: '10px', width: '250px', marginRight: '10px', borderRadius: '4px', border: '1px solid #ccc', color: '#000' }}
         />
-        <button
-          onClick={handleAddTask}
-          style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-        >
+        <button className="add-btn" onClick={handleAddTask}>
           Add Task
         </button>
       </div>
 
       {/* Task List Display */}
-      <h3>All Tasks:</h3>
-      <ul style={{ listStyleType: 'none', padding: 0 }}>
+      <h3 className="section-title">All Tasks</h3>
+      <ul className="task-list">
         {tasks.map((task) => (
-          <li
-            key={task.id}
-            style={{
-              padding: '12px',
-              marginBottom: '10px',
-              backgroundColor: '#333',
-              borderRadius: '6px',
-              width: '380px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              color: '#fff'
-            }}
-          >
-            <span>{task.title}</span>
+          <li key={task.id} className="task-item">
+            <span className={`task-title ${task.status === 'Completed' ? 'completed-text' : ''}`}>
+              {task.title}
+            </span>
 
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div className="action-buttons">
               <button
                 onClick={() => handleToggleStatus(task.id, task.status)}
-                style={{
-                  padding: '6px 12px',
-                  backgroundColor: task.status === 'Completed' ? '#28a745' : '#ffc107',
-                  color: task.status === 'Completed' ? '#fff' : '#000',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold'
-                }}
+                className={`status-btn ${task.status === 'Completed' ? 'completed' : 'pending'}`}
               >
                 {task.status}
               </button>
 
-              <button
-                onClick={() => handleDeleteTask(task.id)}
-                style={{
-                  padding: '6px 12px',
-                  backgroundColor: '#dc3545',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold'
-                }}
-              >
+              <button onClick={() => handleDeleteTask(task.id)} className="delete-btn">
                 Delete
               </button>
             </div>
