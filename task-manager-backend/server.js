@@ -40,6 +40,21 @@ app.post('/api/tasks', (req, res) => {
     });
 });
 
+//update tasks
+app.put('/api/tasks/:id', (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    const query = 'UPDATE tasks SET status = ? WHERE id = ?';
+    db.query(query, [status, id], (err, result) => {
+        if (err) {
+            console.error("Error updating task:", err);
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({ message: "Task updated successfully!" });
+    });
+});
+
 // Server Run பண்ணுறோம்
 app.listen(5000, () => {
     console.log("Backend Server running on http://localhost:5000");
