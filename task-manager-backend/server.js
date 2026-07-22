@@ -55,6 +55,20 @@ app.put('/api/tasks/:id', (req, res) => {
     });
 });
 
+//Delete tasks
+app.delete('/api/tasks/:id', (req, res) => {
+    const { id } = req.params;
+    
+    const query = 'DELETE FROM tasks WHERE id = ?';
+    db.query(query, [id], (err, result) => {
+        if (err) {
+            console.error("Error deleting task:", err);
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({ message: "Task deleted successfully!" });
+    });
+});
+
 // Server Run பண்ணுறோம்
 app.listen(5000, () => {
     console.log("Backend Server running on http://localhost:5000");
