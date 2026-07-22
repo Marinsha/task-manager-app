@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './App.css';
+import { Auth } from './Auth';
 
-// 1. TypeScript Interface
 interface Task {
   id: number;
   title: string;
@@ -9,13 +9,17 @@ interface Task {
 }
 
 function App() {
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [userId, setUserId] = useState<string | null>(localStorage.getItem('userId'));
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTitle, setNewTitle] = useState<string>('');
 
-  // Fetch Data
+  // Login ஆன பயனரின் Tasks-ஐ மட்டும் Fetch செய்யும் Function
   const fetchTasks = async () => {
+    if (!userId) return;
+
     try {
-      const response = await fetch('http://localhost:5000/api/tasks');
+      const response = await fetch(`http://localhost:5000/api/tasks/${userId}`);
       const data: Task[] = await response.json();
       setTasks(data);
     } catch (error) {
@@ -24,18 +28,35 @@ function App() {
   };
 
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    if (token && userId) {
+      fetchTasks();
+    }
+  }, [token, userId]);
+
+  // Login Success Handler
+  const handleLoginSuccess = (newToken: string, newUserId: number) => {
+    setToken(newToken);
+    setUserId(newUserId.toString());
+  };
+
+  // Logout Handler
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    setToken(null);
+    setUserId(null);
+    setTasks([]);
+  };
 
   // Add Task
   const handleAddTask = async () => {
-    if (!newTitle.trim()) return;
+    if (!newTitle.trim() || !userId) return;
 
     try {
       const response = await fetch('http://localhost:5000/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: newTitle }),
+        body: JSON.stringify({ title: newTitle, userId: Number(userId) }),
       });
 
       if (response.ok) {
@@ -81,9 +102,18 @@ function App() {
     }
   };
 
+  // பயனர் Login பண்ணவில்லை என்றால் Auth Component மட்டுமே தெரியும்
+  if (!token) {
+    return <Auth onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // Login பண்ணியிருந்தால் Task Manager Screen தெரியும்
   return (
     <div className="app-container">
-      <h2 className="app-title">📌 Marin's Task Manager</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <h2 className="app-title" style={{ margin: 0 }}>📌 Task Manager</h2>
+        <button onClick={handleLogout} className="delete-btn">Logout</button>
+      </div>
 
       {/* Input Box and Button */}
       <div className="input-group">
@@ -100,7 +130,7 @@ function App() {
       </div>
 
       {/* Task List Display */}
-      <h3 className="section-title">All Tasks</h3>
+      <h3 className="section-title">Your Tasks</h3>
       <ul className="task-list">
         {tasks.map((task) => (
           <li key={task.id} className="task-item">
