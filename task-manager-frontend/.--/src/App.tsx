@@ -3,6 +3,8 @@ import './App.css';
 import { Auth } from './Auth';
 import { WelcomePage } from './WelcomePage';
 import { Profile } from './Profile';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 interface Task {
   id: number;
@@ -27,7 +29,9 @@ function App() {
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'profile'>('dashboard'); 
-  const [userEmail, setUserEmail] = useState<string>(''); // User email store பண்ண
+  
+  // 🚨 Delete Modal-க்காக Task ID-யை Store செய்ய
+  const [deleteModalId, setDeleteModalId] = useState<number | null>(null);
 
   // Login ஆன பயனரின் Tasks-ஐ மட்டும் Fetch செய்யும் Function
   const fetchTasks = async () => {
@@ -52,20 +56,30 @@ function App() {
   const handleLoginSuccess = (newToken: string, newUserId: number) => {
     setToken(newToken);
     setUserId(newUserId.toString());
+    toast.success('Logged in successfully! 👋');
   };
 
   // Logout Handler
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userId');
-    setToken(null);
-    setUserId(null);
-    setTasks([]);
-  };
+ const handleLogout = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('userId');
+  localStorage.removeItem('userEmail');
+  localStorage.removeItem('profilePic'); // 👈 இந்த வரியைச் சேருங்க!
+  setToken(null);
+  setUserId(null);
+  setTasks([]);
+  setCurrentPage('dashboard');
+  toast.info('Logged out successfully!');
+};
 
-  // Add Task
+  // Add Task (Fixed Validation & Toast)
   const handleAddTask = async () => {
-    if (!newTitle.trim() || !userId) return;
+    if (!newTitle.trim()) {
+      toast.warning('Please enter a task title!');
+      return;
+    }
+
+    if (!userId) return;
 
     try {
       const response = await fetch('http://localhost:5000/api/tasks', {
@@ -77,9 +91,11 @@ function App() {
       if (response.ok) {
         setNewTitle('');
         fetchTasks();
+        toast.success('Task added successfully! 🎉');
       }
     } catch (error) {
       console.error("Error adding task:", error);
+      toast.error('Failed to add task!');
     }
   };
 
@@ -97,6 +113,11 @@ function App() {
 
       if (response.ok) {
         fetchTasks();
+        if (newStatus === 'Completed') {
+          toast.success('Task completed! 🎯');
+        } else {
+          toast.info('Task set to pending!');
+        }
       }
     } catch (error) {
       console.error("Error updating status:", error);
@@ -123,28 +144,34 @@ function App() {
       if (response.ok) {
         setEditingTaskId(null);
         fetchTasks();
+        toast.success('Task updated! ✏️');
       }
     } catch (error) {
       console.error("Error updating task title:", error);
     }
   };
 
-  // Delete Task
-  const handleDeleteTask = async (id: number) => {
+  // 🗑️ Delete Task (Modal Confirm பண்ணியதும் இது ரன் ஆகும்)
+  const confirmDeleteTask = async () => {
+    if (!deleteModalId) return;
+
     try {
-      const response = await fetch(`http://localhost:5000/api/tasks/${id}`, {
+      const response = await fetch(`http://localhost:5000/api/tasks/${deleteModalId}`, {
         method: 'DELETE',
       });
 
       if (response.ok) {
         fetchTasks();
+        toast.error('Task deleted! 🗑️');
       }
     } catch (error) {
       console.error("Error deleting task:", error);
+    } finally {
+      setDeleteModalId(null);
     }
   };
 
-  // பயனர் Login பண்ணவில்லை என்றால் WelcomePage அல்லது Auth Component தெரியும்
+  // Auth / Welcome Screen
   if (!token) {
     if (showAuth) {
       return <Auth onLoginSuccess={handleLoginSuccess} onBackToHome={() => setShowAuth(false)} />;
@@ -152,17 +179,18 @@ function App() {
     return <WelcomePage onGetStarted={() => setShowAuth(true)} />;
   }
 
-  // Profile Page காட்ட
-if (currentPage === 'profile') {
-  return (
-    <Profile
-      email={localStorage.getItem('userEmail') || 'user@taskpulse.com'}
-      totalTasks={tasks.length}
-      completedTasks={tasks.filter(t => t.status.toLowerCase() === 'completed').length}
-      onBackToDashboard={() => setCurrentPage('dashboard')}
-    />
-  );
-}
+  // Profile Page (userId Prop சேர்க்கப்பட்டது)
+  if (currentPage === 'profile') {
+    return (
+      <Profile
+        userId={userId || ''}
+        email={localStorage.getItem('userEmail') || 'user@taskpulse.com'}
+        totalTasks={tasks.length}
+        completedTasks={tasks.filter(t => t.status.toLowerCase() === 'completed').length}
+        onBackToDashboard={() => setCurrentPage('dashboard')}
+      />
+    );
+  }
 
   // 📊 Progress Calculations
   const totalTasks = tasks.length;
@@ -170,19 +198,21 @@ if (currentPage === 'profile') {
   const pendingTasks = totalTasks - completedTasks;
   const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-  // Login பண்ணியிருந்தால் Task Manager Screen தெரியும்
   return (
     <div className="app-container">
+      {/* 🔔 Toast Notification Container (Must be present for toasts to display) */}
+      <ToastContainer position="top-right" autoClose={2500} theme="dark" />
+
       {/* Header Section */}
-<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-  <h2 className="app-title" style={{ margin: 0 }}>📌 Task Manager</h2>
-  <div style={{ display: 'flex', gap: '10px' }}>
-    <button onClick={() => setCurrentPage('profile')} className="status-btn" style={{ backgroundColor: '#38bdf8', color: '#0f172a', fontWeight: 'bold' }}>
-      👤 Profile
-    </button>
-    <button onClick={handleLogout} className="delete-btn">Logout</button>
-  </div>
-</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <h2 className="app-title" style={{ margin: 0 }}>📌 Task Manager</h2>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={() => setCurrentPage('profile')} className="status-btn" style={{ backgroundColor: '#38bdf8', color: '#0f172a', fontWeight: 'bold' }}>
+            👤 Profile
+          </button>
+          <button onClick={handleLogout} className="delete-btn">Logout</button>
+        </div>
+      </div>
 
       {/* Input Box and Add Button */}
       <div className="input-group">
@@ -249,7 +279,6 @@ if (currentPage === 'profile') {
           .filter((task) => task.title.toLowerCase().includes(searchQuery.toLowerCase()))
           .map((task) => (
             <li key={task.id} className="task-item">
-              {/* Editing Mode Check */}
               {editingTaskId === task.id ? (
                 <input
                   type="text"
@@ -265,7 +294,6 @@ if (currentPage === 'profile') {
               )}
 
               <div className="action-buttons">
-                {/* Edit / Save Button */}
                 {editingTaskId === task.id ? (
                   <button onClick={() => handleSaveEdit(task.id)} className="add-btn" style={{ padding: '6px 12px' }}>
                     Save
@@ -283,13 +311,28 @@ if (currentPage === 'profile') {
                   {task.status}
                 </button>
 
-                <button onClick={() => handleDeleteTask(task.id)} className="delete-btn">
+                {/* 🗑️ Delete Button: Triggers Confirmation Modal */}
+                <button onClick={() => setDeleteModalId(task.id)} className="delete-btn">
                   Delete
                 </button>
               </div>
             </li>
           ))}
       </ul>
+
+      {/* 🚨 Confirmation Modal (Popup) */}
+      {deleteModalId !== null && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3 className="modal-title">Delete Task? 🗑️</h3>
+            <p className="modal-text">Are you sure you want to delete this task? This action cannot be undone.</p>
+            <div className="modal-actions">
+              <button onClick={() => setDeleteModalId(null)} className="cancel-btn">Cancel</button>
+              <button onClick={confirmDeleteTask} className="confirm-delete-btn">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

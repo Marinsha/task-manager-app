@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'react-toastify';
 
 interface AuthProps {
   onLoginSuccess: (token: string, userId: number) => void;
@@ -37,13 +38,21 @@ export function Auth({ onLoginSuccess, onBackToHome }: AuthProps) {
       }
 
       if (isLogin) {
-        // ✅ Login வெற்றியடைந்தால் மட்டுமே localStorage-ல் சேமிக்க வேண்டும்
+        // ✅ Login வெற்றியடைந்தால் localStorage-ல் சேமிக்கிறோம்
         localStorage.setItem('token', data.token);
         localStorage.setItem('userId', data.userId.toString());
-        localStorage.setItem('userEmail', email); // 👈 இங்கதான் வரணும்!
+        localStorage.setItem('userEmail', email);
+
+        // 📸 Profile Pic Check: படம் இருந்தால் Save பண்ணும், இல்லையென்றால் பழைய படத்தை நீக்கும்!
+        if (data.profilePic) {
+          localStorage.setItem('profilePic', data.profilePic);
+        } else {
+          localStorage.removeItem('profilePic');
+        }
+
         onLoginSuccess(data.token, data.userId);
       } else {
-        alert('Registration successful! Please login.');
+        toast.success('Registration successful! Please login.');
         setIsLogin(true);
       }
     } catch (err: any) {
@@ -101,7 +110,10 @@ export function Auth({ onLoginSuccess, onBackToHome }: AuthProps) {
         {isLogin ? "Don't have an account? " : "Already have an account? "}
         <span
           style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}
-          onClick={() => setIsLogin(!isLogin)}
+          onClick={() => {
+            setIsLogin(!isLogin);
+            setError('');
+          }}
         >
           {isLogin ? 'Register here' : 'Login here'}
         </span>
