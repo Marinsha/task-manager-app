@@ -41,7 +41,18 @@ TaskPulse is a sleek, responsive, and modern Full-Stack Task Management Applicat
 - Node.js installed on your system
 - MySQL Server running
 
-### 1. Clone the Repository
 ```bash
+# 1. Clone the Repository
 git clone [https://github.com/Marinsha/task-manager-app.git](https://github.com/Marinsha/task-manager-app.git)
 cd task-manager-app
+
+# 2. Setup & Start Backend
+cd task-manager-backend
+npm install
+npm run dev
+
+# 3. Setup & Start Frontend
+cd ..
+cd task-manager-frontend
+npm install
+npm run dev
