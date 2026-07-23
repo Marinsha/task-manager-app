@@ -56,6 +56,53 @@ function App() {
     setTasks([]);
   };
 
+  // 1. Progress Calculate பண்றோம் (0 division வராம இருக்க செக் பண்ணி)
+const totalTasks = tasks.length;
+const completedTasks = tasks.filter(t => t.status === 'completed').length;
+const pendingTasks = totalTasks - completedTasks;
+const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+return (
+  <div className="app-container">
+    {/* Header Section (Title & Logout) */}
+    {/* Input Group & Search Bar */}
+
+    {/* 📊 Analytics & Progress Bar Section */}
+    <div className="analytics-card">
+      <div className="stats-grid">
+        <div className="stat-box">
+          <span className="stat-label">Total</span>
+          <span className="stat-value">{totalTasks}</span>
+        </div>
+        <div className="stat-box pending">
+          <span className="stat-label">Pending</span>
+          <span className="stat-value">{pendingTasks}</span>
+        </div>
+        <div className="stat-box completed">
+          <span className="stat-label">Completed</span>
+          <span className="stat-value">{completedTasks}</span>
+        </div>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="progress-container">
+        <div className="progress-header">
+          <span>Task Completion</span>
+          <span>{progressPercentage}%</span>
+        </div>
+        <div className="progress-track">
+          <div 
+            className="progress-fill" 
+            style={{ width: `${progressPercentage}%` }}
+          ></div>
+        </div>
+      </div>
+    </div>
+
+    {/* Task List Section */}
+  </div>
+);
+
   // Add Task
   const handleAddTask = async () => {
     if (!newTitle.trim() || !userId) return;

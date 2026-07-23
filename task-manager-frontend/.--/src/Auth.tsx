@@ -15,6 +15,12 @@ export function Auth({ onLoginSuccess, onBackToHome }: AuthProps) {
     e.preventDefault();
     setError('');
 
+    // 🛡️ Register பண்ணும்போது மட்டும் 6 digit check பண்றோம்
+    if (!isLogin && password.length < 6) {
+      setError('Password must be at least 6 digits/characters long!');
+      return;
+    }
+
     const endpoint = isLogin ? '/api/login' : '/api/register';
 
     try {
@@ -47,8 +53,8 @@ export function Auth({ onLoginSuccess, onBackToHome }: AuthProps) {
   return (
     <div className="app-container" style={{ textAlign: 'center', position: 'relative' }}>
       {/* ⬅ Back to Home Button */}
-      <button 
-        onClick={onBackToHome} 
+      <button
+        onClick={onBackToHome}
         style={{
           background: 'transparent',
           border: 'none',
