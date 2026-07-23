@@ -43,5 +43,5 @@ TaskPulse is a sleek, responsive, and modern Full-Stack Task Management Applicat
 
 ### 1. Clone the Repository
 ```bash
-git clone [https://github.com/your-username/your-repo-name.git](https://github.com/your-username/your-repo-name.git)
-cd your-repo-name
+git clone [https://github.com/Marinsha/task-manager-app.git](https://github.com/Marinsha/task-manager-app.git)
+cd task-manager-app
