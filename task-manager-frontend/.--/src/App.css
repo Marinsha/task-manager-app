@@ -84,11 +84,12 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 16px;
+  gap: 10px;
+  /* elements இடையே இடைவெளி */
+  padding: 12px 16px;
   background-color: #334155;
-  border-radius: 10px;
+  border-radius: 8px;
   margin-bottom: 10px;
-  transition: transform 0.1s ease;
 }
 
 .task-item:hover {
@@ -108,7 +109,11 @@ body {
 /* Buttons inside Task */
 .action-buttons {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 6px;
+  /* பட்டன்களுக்கு நடுவுல இடைவெளி */
+  flex-shrink: 0;
+  /* பட்டன்கள் கார்டை விட்டு வெளிய போகாம இருக்க */
 }
 
 .status-btn {

@@ -91,30 +91,30 @@ function App() {
   };
 
   // Start Editing Task
-const handleStartEdit = (task: Task) => {
-  setEditingTaskId(task.id);
-  setEditingTitle(task.title);
-};
+  const handleStartEdit = (task: Task) => {
+    setEditingTaskId(task.id);
+    setEditingTitle(task.title);
+  };
 
-// Save Edited Task Title
-const handleSaveEdit = async (id: number) => {
-  if (!editingTitle.trim()) return;
+  // Save Edited Task Title
+  const handleSaveEdit = async (id: number) => {
+    if (!editingTitle.trim()) return;
 
-  try {
-    const response = await fetch(`http://localhost:5000/api/tasks/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: editingTitle }),
-    });
+    try {
+      const response = await fetch(`http://localhost:5000/api/tasks/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: editingTitle }),
+      });
 
-    if (response.ok) {
-      setEditingTaskId(null);
-      fetchTasks();
+      if (response.ok) {
+        setEditingTaskId(null);
+        fetchTasks();
+      }
+    } catch (error) {
+      console.error("Error updating task title:", error);
     }
-  } catch (error) {
-    console.error("Error updating task title:", error);
-  }
-};
+  };
 
   // Delete Task
   const handleDeleteTask = async (id: number) => {
@@ -164,32 +164,32 @@ const handleSaveEdit = async (id: number) => {
         {tasks.map((task) => (
           <li key={task.id} className="task-item">
             {/* Editing Mode-ல் இருந்தால் Input Box காட்டும் */}
-{editingTaskId === task.id ? (
-  <input
-    type="text"
-    className="task-input"
-    style={{ flex: 1, marginRight: '10px' }}
-    value={editingTitle}
-    onChange={(e) => setEditingTitle(e.target.value)}
-  />
-) : (
-  <span className={`task-title ${task.status === 'Completed' ? 'completed-text' : ''}`}>
-    {task.title}
-  </span>
-)}
+            {editingTaskId === task.id ? (
+              <input
+                type="text"
+                className="task-input"
+                style={{ flex: 1, minWidth: 0, padding: '8px 12px' }}
+                value={editingTitle}
+                onChange={(e) => setEditingTitle(e.target.value)}
+              />
+            ) : (
+              <span className={`task-title ${task.status === 'Completed' ? 'completed-text' : ''}`}>
+                {task.title}
+              </span>
+            )}
 
             <div className="action-buttons">
-  {/* Edit / Save Button */}
+              {/* Edit / Save Button */}
               {editingTaskId === task.id ? (
-    <button onClick={() => handleSaveEdit(task.id)} className="add-btn" style={{ padding: '6px 12px' }}>
-      Save
-    </button>
-  ) : (
-    <button onClick={() => handleStartEdit(task)} className="status-btn" style={{ backgroundColor: '#f59e0b', color: '#fff' }}>
-      Edit
-    </button>
-  )}
-            <button
+                <button onClick={() => handleSaveEdit(task.id)} className="add-btn" style={{ padding: '6px 12px' }}>
+                  Save
+                </button>
+              ) : (
+                <button onClick={() => handleStartEdit(task)} className="status-btn" style={{ backgroundColor: '#f59e0b', color: '#fff' }}>
+                  Edit
+                </button>
+              )}
+              <button
                 onClick={() => handleToggleStatus(task.id, task.status)}
                 className={`status-btn ${task.status === 'Completed' ? 'completed' : 'pending'}`}
               >
