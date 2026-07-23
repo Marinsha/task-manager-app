@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import './App.css';
 import { Auth } from './Auth';
 import { WelcomePage } from './WelcomePage';
+import { Profile } from './Profile';
 
 interface Task {
   id: number;
@@ -14,13 +15,19 @@ function App() {
   const [userId, setUserId] = useState<string | null>(localStorage.getItem('userId'));
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTitle, setNewTitle] = useState<string>('');
+  
   // Edit State variables
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
   const [editingTitle, setEditingTitle] = useState<string>('');
+  
   // Show Auth Screen State
   const [showAuth, setShowAuth] = useState<boolean>(false);
+  
   // Search State
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const [currentPage, setCurrentPage] = useState<'dashboard' | 'profile'>('dashboard'); 
+  const [userEmail, setUserEmail] = useState<string>(''); // User email store பண்ண
 
   // Login ஆன பயனரின் Tasks-ஐ மட்டும் Fetch செய்யும் Function
   const fetchTasks = async () => {
@@ -56,53 +63,6 @@ function App() {
     setTasks([]);
   };
 
-  // 1. Progress Calculate பண்றோம் (0 division வராம இருக்க செக் பண்ணி)
-const totalTasks = tasks.length;
-const completedTasks = tasks.filter(t => t.status === 'completed').length;
-const pendingTasks = totalTasks - completedTasks;
-const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-
-return (
-  <div className="app-container">
-    {/* Header Section (Title & Logout) */}
-    {/* Input Group & Search Bar */}
-
-    {/* 📊 Analytics & Progress Bar Section */}
-    <div className="analytics-card">
-      <div className="stats-grid">
-        <div className="stat-box">
-          <span className="stat-label">Total</span>
-          <span className="stat-value">{totalTasks}</span>
-        </div>
-        <div className="stat-box pending">
-          <span className="stat-label">Pending</span>
-          <span className="stat-value">{pendingTasks}</span>
-        </div>
-        <div className="stat-box completed">
-          <span className="stat-label">Completed</span>
-          <span className="stat-value">{completedTasks}</span>
-        </div>
-      </div>
-
-      {/* Progress Bar */}
-      <div className="progress-container">
-        <div className="progress-header">
-          <span>Task Completion</span>
-          <span>{progressPercentage}%</span>
-        </div>
-        <div className="progress-track">
-          <div 
-            className="progress-fill" 
-            style={{ width: `${progressPercentage}%` }}
-          ></div>
-        </div>
-      </div>
-    </div>
-
-    {/* Task List Section */}
-  </div>
-);
-
   // Add Task
   const handleAddTask = async () => {
     if (!newTitle.trim() || !userId) return;
@@ -125,7 +85,8 @@ return (
 
   // Toggle Status
   const handleToggleStatus = async (id: number, currentStatus: string) => {
-    const newStatus = currentStatus === 'Pending' ? 'Completed' : 'Pending';
+    const isCompleted = currentStatus.toLowerCase() === 'completed';
+    const newStatus = isCompleted ? 'Pending' : 'Completed';
 
     try {
       const response = await fetch(`http://localhost:5000/api/tasks/${id}`, {
@@ -183,23 +144,47 @@ return (
     }
   };
 
-  // பயனர் Login பண்ணவில்லை என்றால் Auth Component மட்டுமே தெரியும்
+  // பயனர் Login பண்ணவில்லை என்றால் WelcomePage அல்லது Auth Component தெரியும்
   if (!token) {
-  if (showAuth) {
-    return <Auth onLoginSuccess={handleLoginSuccess} onBackToHome={() => setShowAuth(false)} />;
+    if (showAuth) {
+      return <Auth onLoginSuccess={handleLoginSuccess} onBackToHome={() => setShowAuth(false)} />;
+    }
+    return <WelcomePage onGetStarted={() => setShowAuth(true)} />;
   }
-  return <WelcomePage onGetStarted={() => setShowAuth(true)} />;
+
+  // Profile Page காட்ட
+if (currentPage === 'profile') {
+  return (
+    <Profile
+      email={localStorage.getItem('userEmail') || 'user@taskpulse.com'}
+      totalTasks={tasks.length}
+      completedTasks={tasks.filter(t => t.status.toLowerCase() === 'completed').length}
+      onBackToDashboard={() => setCurrentPage('dashboard')}
+    />
+  );
 }
+
+  // 📊 Progress Calculations
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter(t => t.status.toLowerCase() === 'completed').length;
+  const pendingTasks = totalTasks - completedTasks;
+  const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   // Login பண்ணியிருந்தால் Task Manager Screen தெரியும்
   return (
     <div className="app-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2 className="app-title" style={{ margin: 0 }}>📌 Task Manager</h2>
-        <button onClick={handleLogout} className="delete-btn">Logout</button>
-      </div>
+      {/* Header Section */}
+<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+  <h2 className="app-title" style={{ margin: 0 }}>📌 Task Manager</h2>
+  <div style={{ display: 'flex', gap: '10px' }}>
+    <button onClick={() => setCurrentPage('profile')} className="status-btn" style={{ backgroundColor: '#38bdf8', color: '#0f172a', fontWeight: 'bold' }}>
+      👤 Profile
+    </button>
+    <button onClick={handleLogout} className="delete-btn">Logout</button>
+  </div>
+</div>
 
-      {/* Input Box and Button */}
+      {/* Input Box and Add Button */}
       <div className="input-group">
         <input
           type="text"
@@ -225,6 +210,38 @@ return (
         />
       </div>
 
+      {/* 📊 Analytics & Progress Bar Section */}
+      <div className="analytics-card">
+        <div className="stats-grid">
+          <div className="stat-box">
+            <span className="stat-label">Total</span>
+            <span className="stat-value">{totalTasks}</span>
+          </div>
+          <div className="stat-box pending">
+            <span className="stat-label">Pending</span>
+            <span className="stat-value">{pendingTasks}</span>
+          </div>
+          <div className="stat-box completed">
+            <span className="stat-label">Completed</span>
+            <span className="stat-value">{completedTasks}</span>
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="progress-container">
+          <div className="progress-header">
+            <span>Task Completion</span>
+            <span>{progressPercentage}%</span>
+          </div>
+          <div className="progress-track">
+            <div 
+              className="progress-fill" 
+              style={{ width: `${progressPercentage}%` }}
+            ></div>
+          </div>
+        </div>
+      </div>
+
       {/* Task List Display */}
       <h3 className="section-title">Your Tasks</h3>
       <ul className="task-list">
@@ -232,7 +249,7 @@ return (
           .filter((task) => task.title.toLowerCase().includes(searchQuery.toLowerCase()))
           .map((task) => (
             <li key={task.id} className="task-item">
-              {/* Editing Mode-ல் இருந்தால் Input Box காட்டும் */}
+              {/* Editing Mode Check */}
               {editingTaskId === task.id ? (
                 <input
                   type="text"
@@ -242,7 +259,7 @@ return (
                   onChange={(e) => setEditingTitle(e.target.value)}
                 />
               ) : (
-                <span className={`task-title ${task.status === 'Completed' ? 'completed-text' : ''}`}>
+                <span className={`task-title ${task.status.toLowerCase() === 'completed' ? 'completed-text' : ''}`}>
                   {task.title}
                 </span>
               )}
@@ -258,9 +275,10 @@ return (
                     Edit
                   </button>
                 )}
+
                 <button
                   onClick={() => handleToggleStatus(task.id, task.status)}
-                  className={`status-btn ${task.status === 'Completed' ? 'completed' : 'pending'}`}
+                  className={`status-btn ${task.status.toLowerCase() === 'completed' ? 'completed' : 'pending'}`}
                 >
                   {task.status}
                 </button>

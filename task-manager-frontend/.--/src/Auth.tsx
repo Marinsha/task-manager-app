@@ -37,9 +37,10 @@ export function Auth({ onLoginSuccess, onBackToHome }: AuthProps) {
       }
 
       if (isLogin) {
-        // Login வெற்றியடைந்தால் Token & UserId-ஐ App Component-க்கு அனுப்புகிறோம்
+        // ✅ Login வெற்றியடைந்தால் மட்டுமே localStorage-ல் சேமிக்க வேண்டும்
         localStorage.setItem('token', data.token);
         localStorage.setItem('userId', data.userId.toString());
+        localStorage.setItem('userEmail', email); // 👈 இங்கதான் வரணும்!
         onLoginSuccess(data.token, data.userId);
       } else {
         alert('Registration successful! Please login.');

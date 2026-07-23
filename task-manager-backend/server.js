@@ -1,22 +1,39 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-
-
 const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const path = require('path');
 
 const app = express();
-app.use(cors()); // Frontend-ல இருந்து வர Request-ஐ Allow பண்ண
-app.use(express.json()); // JSON Data-வை புரிஞ்சுக்க
 
-// MySQL Connection (Unga Port 3307-க்கு ஏத்த மாதிரி Set பண்ணிருக்கேன்)
+// Middlewares
+app.use(cors());
+app.use(express.json());
+
+// 1. Static folder setup for uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// 2. Multer Storage Setup
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage });
+
+// MySQL Connection
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: '',      // XAMPP-ல Password இல்ல
+    password: '',
     database: 'marin_tasks_db',
-    port: 3307         // 👈 Unga XAMPP MySQL Port Number
+    port: 3307
 });
 
 db.connect((err) => {
@@ -27,7 +44,28 @@ db.connect((err) => {
     }
 });
 
-// Get tasks for a specific user
+const JWT_SECRET = 'your_secret_key_123';
+
+// 📸 3. Profile Pic Upload API (MySQL Syntax Fix)
+app.post('/api/upload-profile/:userId', upload.single('profilePic'), (req, res) => {
+  const { userId } = req.params;
+  if (!req.file) {
+    return res.status(400).json({ error: 'Please select an image file!' });
+  }
+
+  const imageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+
+  const query = 'UPDATE users SET profile_pic = ? WHERE id = ?';
+  db.query(query, [imageUrl, userId], (err, result) => {
+    if (err) {
+      console.error("Error updating profile picture:", err);
+      return res.status(500).json({ error: "Failed to upload profile picture" });
+    }
+    res.json({ imageUrl });
+  });
+});
+
+// Get tasks
 app.get('/api/tasks/:userId', (req, res) => {
     const { userId } = req.params;
     const query = 'SELECT * FROM tasks WHERE user_id = ?';
@@ -37,8 +75,7 @@ app.get('/api/tasks/:userId', (req, res) => {
     });
 });
 
-// API 2: Add New Task (புது Task டேட்டாபேஸ்ல சேர்க்க)
-// Add a new task with user_id
+// Add new task
 app.post('/api/tasks', (req, res) => {
     const { title, userId } = req.body;
     const query = 'INSERT INTO tasks (title, status, user_id) VALUES (?, ?, ?)';
@@ -48,13 +85,23 @@ app.post('/api/tasks', (req, res) => {
     });
 });
 
-//update tasks
+// Update task status / title
 app.put('/api/tasks/:id', (req, res) => {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, title } = req.body;
 
-    const query = 'UPDATE tasks SET status = ? WHERE id = ?';
-    db.query(query, [status, id], (err, result) => {
+    let query = '';
+    let queryParams = [];
+
+    if (title) {
+        query = 'UPDATE tasks SET title = ? WHERE id = ?';
+        queryParams = [title, id];
+    } else {
+        query = 'UPDATE tasks SET status = ? WHERE id = ?';
+        queryParams = [status, id];
+    }
+
+    db.query(query, queryParams, (err, result) => {
         if (err) {
             console.error("Error updating task:", err);
             return res.status(500).json({ error: err.message });
@@ -63,10 +110,9 @@ app.put('/api/tasks/:id', (req, res) => {
     });
 });
 
-//Delete tasks
+// Delete task
 app.delete('/api/tasks/:id', (req, res) => {
     const { id } = req.params;
-
     const query = 'DELETE FROM tasks WHERE id = ?';
     db.query(query, [id], (err, result) => {
         if (err) {
@@ -77,10 +123,7 @@ app.delete('/api/tasks/:id', (req, res) => {
     });
 });
 
-// Secret Key for JWT (இத வச்சுதான் Token Encrypt ஆகும்)
-const JWT_SECRET = 'your_secret_key_123';
-
-// 1. REGISTER USER (Sign Up)
+// Register User
 app.post('/api/register', async (req, res) => {
     const { email, password } = req.body;
 
@@ -89,9 +132,7 @@ app.post('/api/register', async (req, res) => {
     }
 
     try {
-        // Password-ஐ Encrypt (Hash) பண்றோம்
         const hashedPassword = await bcrypt.hash(password, 10);
-
         const query = 'INSERT INTO users (email, password) VALUES (?, ?)';
         db.query(query, [email, hashedPassword], (err, result) => {
             if (err) {
@@ -107,7 +148,7 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-// 2. LOGIN USER
+// Login User
 app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
 
@@ -124,20 +165,24 @@ app.post('/api/login', (req, res) => {
         }
 
         const user = results[0];
-
-        // Password சரியா இருக்கான்னு Compare பண்றோம்
         const isMatch = await bcrypt.compare(password, user.password);
+
         if (!isMatch) {
             return res.status(400).json({ error: "Invalid credentials" });
         }
 
-        // Login ஆனதும் User ID வச்சு JWT Token உருவாக்குறோம்
         const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1h' });
 
-        res.json({ message: "Login successful!", token, userId: user.id });
+        res.json({ 
+            message: "Login successful!", 
+            token, 
+            userId: user.id,
+            profilePic: user.profile_pic || null
+        });
     });
 });
-// Server Run பண்ணுறோம்
+
+// Server Start
 app.listen(5000, () => {
     console.log("Backend Server running on http://localhost:5000");
 });
