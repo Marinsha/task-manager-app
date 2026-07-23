@@ -2,9 +2,10 @@ import { useState } from 'react';
 
 interface AuthProps {
   onLoginSuccess: (token: string, userId: number) => void;
+  onBackToHome: () => void;
 }
 
-export function Auth({ onLoginSuccess }: AuthProps) {
+export function Auth({ onLoginSuccess, onBackToHome }: AuthProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -44,7 +45,25 @@ export function Auth({ onLoginSuccess }: AuthProps) {
   };
 
   return (
-    <div className="app-container" style={{ textAlign: 'center' }}>
+    <div className="app-container" style={{ textAlign: 'center', position: 'relative' }}>
+      {/* ⬅ Back to Home Button */}
+      <button 
+        onClick={onBackToHome} 
+        style={{
+          background: 'transparent',
+          border: 'none',
+          color: '#94a3b8',
+          cursor: 'pointer',
+          fontSize: '0.9rem',
+          marginBottom: '15px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '5px'
+        }}
+      >
+        ⬅ Back to Home
+      </button>
+
       <h2 className="app-title">{isLogin ? '🔑 Login' : '📝 Register'}</h2>
 
       {error && <p style={{ color: '#ef4444', marginBottom: '15px' }}>{error}</p>}

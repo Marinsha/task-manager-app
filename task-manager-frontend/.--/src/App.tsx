@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import './App.css';
 import { Auth } from './Auth';
+import { WelcomePage } from './WelcomePage';
 
 interface Task {
   id: number;
@@ -16,6 +17,8 @@ function App() {
   // Edit State variables
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
   const [editingTitle, setEditingTitle] = useState<string>('');
+  // Show Auth Screen State
+  const [showAuth, setShowAuth] = useState<boolean>(false);
   // Search State
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -135,8 +138,11 @@ function App() {
 
   // பயனர் Login பண்ணவில்லை என்றால் Auth Component மட்டுமே தெரியும்
   if (!token) {
-    return <Auth onLoginSuccess={handleLoginSuccess} />;
+  if (showAuth) {
+    return <Auth onLoginSuccess={handleLoginSuccess} onBackToHome={() => setShowAuth(false)} />;
   }
+  return <WelcomePage onGetStarted={() => setShowAuth(true)} />;
+}
 
   // Login பண்ணியிருந்தால் Task Manager Screen தெரியும்
   return (
