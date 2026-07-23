@@ -16,6 +16,8 @@ function App() {
   // Edit State variables
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
   const [editingTitle, setEditingTitle] = useState<string>('');
+  // Search State
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Login ஆன பயனரின் Tasks-ஐ மட்டும் Fetch செய்யும் Function
   const fetchTasks = async () => {
@@ -158,50 +160,64 @@ function App() {
         </button>
       </div>
 
+      {/* Search Bar */}
+      <div style={{ marginBottom: '15px' }}>
+        <input
+          type="text"
+          className="task-input"
+          placeholder="🔍 Search tasks..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{ width: '100%' }}
+        />
+      </div>
+
       {/* Task List Display */}
       <h3 className="section-title">Your Tasks</h3>
       <ul className="task-list">
-        {tasks.map((task) => (
-          <li key={task.id} className="task-item">
-            {/* Editing Mode-ல் இருந்தால் Input Box காட்டும் */}
-            {editingTaskId === task.id ? (
-              <input
-                type="text"
-                className="task-input"
-                style={{ flex: 1, minWidth: 0, padding: '8px 12px' }}
-                value={editingTitle}
-                onChange={(e) => setEditingTitle(e.target.value)}
-              />
-            ) : (
-              <span className={`task-title ${task.status === 'Completed' ? 'completed-text' : ''}`}>
-                {task.title}
-              </span>
-            )}
-
-            <div className="action-buttons">
-              {/* Edit / Save Button */}
+        {tasks
+          .filter((task) => task.title.toLowerCase().includes(searchQuery.toLowerCase()))
+          .map((task) => (
+            <li key={task.id} className="task-item">
+              {/* Editing Mode-ல் இருந்தால் Input Box காட்டும் */}
               {editingTaskId === task.id ? (
-                <button onClick={() => handleSaveEdit(task.id)} className="add-btn" style={{ padding: '6px 12px' }}>
-                  Save
-                </button>
+                <input
+                  type="text"
+                  className="task-input"
+                  style={{ flex: 1, minWidth: 0, padding: '8px 12px' }}
+                  value={editingTitle}
+                  onChange={(e) => setEditingTitle(e.target.value)}
+                />
               ) : (
-                <button onClick={() => handleStartEdit(task)} className="status-btn" style={{ backgroundColor: '#f59e0b', color: '#fff' }}>
-                  Edit
-                </button>
+                <span className={`task-title ${task.status === 'Completed' ? 'completed-text' : ''}`}>
+                  {task.title}
+                </span>
               )}
-              <button
-                onClick={() => handleToggleStatus(task.id, task.status)}
-                className={`status-btn ${task.status === 'Completed' ? 'completed' : 'pending'}`}
-              >
-                {task.status}
-              </button>
 
-              <button onClick={() => handleDeleteTask(task.id)} className="delete-btn">
-                Delete
-              </button>
-            </div>
-          </li>
-        ))}
+              <div className="action-buttons">
+                {/* Edit / Save Button */}
+                {editingTaskId === task.id ? (
+                  <button onClick={() => handleSaveEdit(task.id)} className="add-btn" style={{ padding: '6px 12px' }}>
+                    Save
+                  </button>
+                ) : (
+                  <button onClick={() => handleStartEdit(task)} className="status-btn" style={{ backgroundColor: '#f59e0b', color: '#fff' }}>
+                    Edit
+                  </button>
+                )}
+                <button
+                  onClick={() => handleToggleStatus(task.id, task.status)}
+                  className={`status-btn ${task.status === 'Completed' ? 'completed' : 'pending'}`}
+                >
+                  {task.status}
+                </button>
+
+                <button onClick={() => handleDeleteTask(task.id)} className="delete-btn">
+                  Delete
+                </button>
+              </div>
+            </li>
+          ))}
       </ul>
     </div>
   );
